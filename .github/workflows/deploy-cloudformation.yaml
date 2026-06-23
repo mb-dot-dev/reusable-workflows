@@ -28,9 +28,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
     outputs:
       stack-outputs: ${{ toJSON(steps.deploy.outputs) }}
     steps:
