@@ -21,15 +21,15 @@ on:
         required: true
         type: string
     outputs:
-      stack-outputs:
+      stack-outputs-json:
         description: 'All CloudFormation stack outputs as JSON'
-        value: ${{ jobs.deploy.outputs.stack-outputs }}
+        value: ${{ jobs.deploy.outputs.stack-outputs-json }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     outputs:
-      stack-outputs: ${{ toJSON(steps.deploy.outputs) }}
+      stack-outputs-json: ${{ toJSON(steps.deploy.outputs) }}
     steps:
       - uses: actions/checkout@v7
 
