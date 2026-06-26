@@ -45,7 +45,7 @@ jobs:
         with:
           name: ${{ inputs.stack-name }}
           template: ${{ inputs.template }}
-          no-fail-on-empty-changeset: 1
+          fail-on-empty-changeset: false
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: ${{ inputs.parameter-overrides }}
           tags: '[{"Key":"Project","Value":"${{ inputs.project }}"}]'
