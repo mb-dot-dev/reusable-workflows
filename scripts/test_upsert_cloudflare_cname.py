@@ -31,9 +31,9 @@ def test_creates_record_when_none_exists():
     client.dns.records.update.assert_not_called()
 
 
-def test_updates_record_when_one_exists():
+def test_updates_record_when_content_differs():
     client = make_client()
-    existing = SimpleNamespace(id="rec-1", ttl=300, proxied=False)
+    existing = SimpleNamespace(id="rec-1", ttl=300, proxied=False, content="old.example.com")
     client.dns.records.list.return_value = [existing]
 
     upsert_cname(client, "zone-1", "app.example.com", "target.example.com")
@@ -50,11 +50,22 @@ def test_updates_record_when_one_exists():
     client.dns.records.create.assert_not_called()
 
 
+def test_skips_update_when_content_already_matches():
+    client = make_client()
+    existing = SimpleNamespace(id="rec-1", ttl=300, proxied=False, content="target.example.com")
+    client.dns.records.list.return_value = [existing]
+
+    upsert_cname(client, "zone-1", "app.example.com", "target.example.com")
+
+    client.dns.records.update.assert_not_called()
+    client.dns.records.create.assert_not_called()
+
+
 def test_raises_when_multiple_records_match():
     client = make_client()
     client.dns.records.list.return_value = [
-        SimpleNamespace(id="rec-1", ttl=300, proxied=False),
-        SimpleNamespace(id="rec-2", ttl=300, proxied=False),
+        SimpleNamespace(id="rec-1", ttl=300, proxied=False, content="a.example.com"),
+        SimpleNamespace(id="rec-2", ttl=300, proxied=False, content="b.example.com"),
     ]
 
     with pytest.raises(RuntimeError):

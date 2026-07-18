@@ -25,6 +25,9 @@ def upsert_cname(client: Cloudflare, zone: str, record_name: str, record_content
     if matches:
         record = cast(CNAMERecord, matches[0])
         assert record.id is not None
+        if record.content == record_content:
+            print(f"CNAME record {record_name} already points to {record_content} (id={record.id}), skipping")
+            return
         client.dns.records.update(
             record.id,
             zone_id=zone,
