@@ -1,0 +1,44 @@
+name: Upsert Cloudflare CNAME
+
+on:
+  workflow_call:
+    inputs:
+      zone:
+        description: 'Cloudflare zone ID'
+        required: true
+        type: string
+      record-name:
+        description: 'Cloudflare record name'
+        required: true
+        type: string
+      record-content:
+        description: 'Cloudflare record content'
+        required: true
+        type: string
+      token:
+        description: 'Cloudflare API token'
+        required: true
+        type: string
+
+jobs:
+  upsert:
+    name: Upsert Cloudflare CNAME
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+
+      - name: Upsert Cloudflare CNAME record
+        env:
+          CLOUDFLARE_ZONE: ${{ inputs.zone }}
+          CLOUDFLARE_RECORD_NAME: ${{ inputs.record-name }}
+          CLOUDFLARE_RECORD_CONTENT: ${{ inputs.record-content }}
+          CLOUDFLARE_API_TOKEN: ${{ inputs.token }}
+        run: |
+          uv run scripts/upsert_cloudflare_cname.py \
+            --zone "$CLOUDFLARE_ZONE" \
+            --record-name "$CLOUDFLARE_RECORD_NAME" \
+            --record-content "$CLOUDFLARE_RECORD_CONTENT" \
+            --token "$CLOUDFLARE_API_TOKEN"
