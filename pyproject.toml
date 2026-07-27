@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "cloudflare>=5.5.0",
+    "cloudflare>=5.6.0",
 ]
 
 [dependency-groups]
