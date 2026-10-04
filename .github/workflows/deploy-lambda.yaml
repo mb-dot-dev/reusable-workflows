@@ -1,0 +1,88 @@
+name: Deploy Lambda
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: 'Project name, used for the stack name (<project>-lambda), function name and tags'
+        required: true
+        type: string
+      lambda-execution-role-arn:
+        description: 'Lambda execution role ARN'
+        required: true
+        type: string
+      parameter-overrides:
+        description: 'Extra space-separated SAM parameter overrides (Key=Value ...)'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      DEPLOY_ROLE_ARN:
+        description: 'AWS role to assume for deployment'
+        required: true
+      SECRET_PARAMETER_OVERRIDES:
+        description: 'Extra space-separated SAM parameter overrides (Key=Value ...) that contain secrets'
+        required: false
+    outputs:
+      function-arn:
+        description: 'Lambda function ARN'
+        value: ${{ jobs.deploy-lambda.outputs.function-arn }}
+      function-name:
+        description: 'Lambda function name'
+        value: ${{ jobs.deploy-lambda.outputs.function-name }}
+
+jobs:
+  deploy-lambda:
+    name: Deploy Lambda
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # REQUIRED for OIDC
+      contents: read
+    outputs:
+      function-arn: ${{ steps.output.outputs.FunctionArn }}
+      function-name: ${{ steps.output.outputs.FunctionName }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download Lambda ZIP artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: lambda-zip
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.DEPLOY_ROLE_ARN }}
+          aws-region: eu-central-1
+
+      - name: Install AWS SAM CLI
+        uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # v3
+        with:
+          version: 1.161.0
+          use-installer: true
+
+      - name: SAM Deploy
+        env:
+          PROJECT: ${{ inputs.project }}
+          LAMBDA_EXECUTION_ROLE_ARN: ${{ inputs.lambda-execution-role-arn }}
+          PARAMETER_OVERRIDES: ${{ inputs.parameter-overrides }}
+          SECRET_PARAMETER_OVERRIDES: ${{ secrets.SECRET_PARAMETER_OVERRIDES }}
+        run: |
+          # Extra overrides are intentionally unquoted so they split into separate Key=Value arguments
+          sam deploy \
+            --stack-name "$PROJECT-lambda" \
+            --parameter-overrides \
+            ProjectName="$PROJECT" \
+            FunctionName="$PROJECT" \
+            LambdaExecutionRoleArn="$LAMBDA_EXECUTION_ROLE_ARN" \
+            $PARAMETER_OVERRIDES \
+            $SECRET_PARAMETER_OVERRIDES \
+            --tags Project="$PROJECT"
+
+      - name: Output Lambda function details
+        id: output
+        env:
+          STACK_NAME: ${{ inputs.project }}-lambda
+        run: |
+          echo "FunctionArn=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query 'Stacks[0].Outputs[?OutputKey==`FunctionArn`].OutputValue' --output text)" >> "$GITHUB_OUTPUT"
+          echo "FunctionName=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query 'Stacks[0].Outputs[?OutputKey==`FunctionName`].OutputValue' --output text)" >> "$GITHUB_OUTPUT"
