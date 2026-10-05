@@ -68,6 +68,12 @@ jobs:
           PARAMETER_OVERRIDES: ${{ inputs.parameter-overrides }}
           SECRET_PARAMETER_OVERRIDES: ${{ secrets.SECRET_PARAMETER_OVERRIDES }}
         run: |
+          # The secret is masked as one string, but sam prints each parameter separately, so mask every value too
+          for override in $SECRET_PARAMETER_OVERRIDES; do
+            value="${override#*=}"
+            [ -n "$value" ] && echo "::add-mask::$value"
+          done
+
           # Extra overrides are intentionally unquoted so they split into separate Key=Value arguments
           sam deploy \
             --stack-name "$PROJECT-lambda" \
