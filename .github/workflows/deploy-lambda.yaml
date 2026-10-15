@@ -36,7 +36,7 @@ jobs:
     name: Deploy Lambda
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/mb-dot-dev/gha-sdk-images:1.8.0
+      image: ghcr.io/mb-dot-dev/gha-sdk-images:2.0.0
     permissions:
       id-token: write # REQUIRED for OIDC
       contents: read
